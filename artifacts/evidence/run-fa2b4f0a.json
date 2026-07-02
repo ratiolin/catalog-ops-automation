@@ -1,0 +1,45 @@
+{
+  "evidence_version": "1.0",
+  "captured_at": "2026-07-02T21:00:00+08:00",
+  "scenario": "synthetic_catalog_operations_sandbox",
+  "run_id": "fa2b4f0a-6460-4658-a8e1-af73970f963c",
+  "current_item_state": {
+    "input": 30,
+    "validation_failed": 10,
+    "dify_generated": 20,
+    "erp_written": 20,
+    "erp_failed": 0
+  },
+  "odoo_verification": {
+    "database": "catalog_erp",
+    "matching_demo_skus": 20,
+    "sku_pattern": "^(DESK|HOME|DIGI|OUT)-"
+  },
+  "operation_attempt_history": {
+    "written": 20,
+    "failed": 23,
+    "interpretation": "Failed operations are retained historical development attempts; all 20 approved items are currently erp_written."
+  },
+  "metabase_verification": {
+    "dashboard_id": 2,
+    "cards": {
+      "40": "latest current item status",
+      "41": "latest validation errors",
+      "42": "latest category by status",
+      "43": "ERP operation attempt history, including development failures"
+    }
+  },
+  "implementation": {
+    "orchestrator": "ShadowBot 6.0.30",
+    "erp": "Odoo Community 19",
+    "erp_transport": "Odoo XML-RPC",
+    "copywriter": "published Dify workflow",
+    "bi": "Metabase"
+  },
+  "artifact_sha256": {
+    "data/sample-products.csv": "b222e290a0a8778366e84c2f113cf5568806d79c2c834480a8a5f3f1d16c4ec1",
+    "dify-workflows/catalog-copy-v1-candidate.yml": "fa8e891edeaaa02f3c61f435a744d4841d156c998acecaebc91a5c6b390d9c07",
+    "shadowbot/catalog_odoo_rpa.py": "fe8ae9472ab3b6179a53b43fb4d904a4e0250992dc7a10acb066f20ccc079d20"
+  },
+  "claim_boundary": "All records and reported outcomes come from a synthetic portfolio sandbox and do not represent production business impact."
+}
