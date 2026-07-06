@@ -456,3 +456,29 @@ def test_callback_posts_json():
     mock_response.read.return_value = b'{"ack": true}'
     with patch("urllib.request.urlopen", return_value=mock_response):
         RPA._callback("http://base", "r1", "token", {"item_id": "1"}, "written", record_id=42)
+
+# ---------------------------------------------------------------------------
+# catalog_odoo_rpa: main() orchestrator test
+# ---------------------------------------------------------------------------
+
+
+def test_main_dry_run_returns_approved_count():
+    # Dry run mode skips Odoo
+    mock_response = MagicMock()
+    mock_response.__enter__.return_value = mock_response
+    mock_response.read.return_value = b"item_id,approved\nitem-1,true\nitem-2,false\nitem-3,true\n"
+    with patch("urllib.request.urlopen", return_value=mock_response):
+        result = RPA.main({
+            "api_base_url": "http://api",
+            "run_id": "r1",
+            "rpa_token": "t",
+            "odoo_login_url": "http://odoo/login?db=db",
+            "odoo_product_list_url": "http://odoo/list",
+            "odoo_username": "u",
+            "odoo_password": "p",
+            "dry_run": "true",
+        })
+    assert result["approved"] == 3
+    assert result["dry_run"] is True
+
+
