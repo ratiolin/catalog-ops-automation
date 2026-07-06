@@ -144,3 +144,290 @@ def test_build_product_values_uses_discovered_writable_fields():
     assert values['detailed_type'] == 'consu'
     assert values['sale_ok'] is True
     assert 'purchase_ok' not in values
+# ---------------------------------------------------------------------------
+# odoo_adapter: _compact_fault
+# ---------------------------------------------------------------------------
+
+def test_compact_fault_extracts_fault_string():
+    class FakeFault(Exception):
+        faultString = "Connection refused\nTimeout"
+
+    result = ODOO._compact_fault(FakeFault("extra"))
+    assert "Connection refused" in result
+    assert "Timeout" in result
+
+
+def test_compact_fault_falls_back_to_str():
+    result = ODOO._compact_fault(ValueError("plain error"))
+    assert "plain error" in result
+
+
+# ---------------------------------------------------------------------------
+# odoo_adapter: selection_keys (static method)
+# ---------------------------------------------------------------------------
+
+def test_selection_keys_extracts_choice_keys():
+    field_def = {"selection": [["a", "Alpha"], ["b", "Beta"]]}
+    assert ODOO.OdooClient.selection_keys(field_def) == ["a", "b"]
+
+
+def test_selection_keys_missing_key_returns_empty():
+    assert ODOO.OdooClient.selection_keys({}) == []
+
+
+# ---------------------------------------------------------------------------
+# product_builder: _item_value
+# ---------------------------------------------------------------------------
+
+def test_item_value_returns_stripped_string():
+    assert PB._item_value({"a": "  hello  "}, "a") == "hello"
+
+
+def test_item_value_missing_key_returns_empty():
+    assert PB._item_value({}, "missing") == ""
+
+
+def test_item_value_none_value_returns_empty():
+    assert PB._item_value({"a": None}, "a") == ""
+
+
+def test_item_value_custom_default():
+    assert PB._item_value({}, "missing", "fallback") == "fallback"
+
+
+# ---------------------------------------------------------------------------
+# product_builder: build_note
+# ---------------------------------------------------------------------------
+
+def test_build_note_includes_all_fields():
+    note = PB.build_note({
+        "sku": "SKU-001",
+        "category": "Test",
+        "stock": "10",
+        "selling_points": "fast",
+        "keywords": "test",
+        "item_id": "item-1",
+    })
+    assert "SKU-001" in note
+    assert "Test" in note
+    assert "10" in note
+    assert "fast" in note
+
+
+# ---------------------------------------------------------------------------
+# product_builder: _set_if_writable
+# ---------------------------------------------------------------------------
+
+def test_set_if_writable_sets_when_field_is_writable():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): pass
+        def field_writable(self, model, name):
+            return name == "writable_field"
+
+    odoo = FakeOdoo()
+    values = {}
+    PB._set_if_writable(odoo, "product.template", values, "writable_field", "hello")
+    PB._set_if_writable(odoo, "product.template", values, "readonly_field", "world")
+    assert values == {"writable_field": "hello"}
+
+
+# ---------------------------------------------------------------------------
+# product_builder: _enrich_full_mode_values
+# ---------------------------------------------------------------------------
+
+def test_enrich_full_mode_values_adds_type_and_descriptions():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): pass
+        def fields_get(self, model):
+            return {
+                "detailed_type": {
+                    "readonly": False,
+                    "selection": [["consu", "Goods"]],
+                },
+                "description_sale": {"readonly": False},
+                "description": {"readonly": False},
+                "sale_ok": {"readonly": False},
+                "purchase_ok": {"readonly": True},
+            }
+        def field_writable(self, model, name):
+            return not bool(self.fields_get(model).get(name, {}).get("readonly"))
+
+    odoo = FakeOdoo()
+    values = {}
+    PB._enrich_full_mode_values(odoo, values, "test note")
+    assert values["detailed_type"] == "consu"
+    assert values["description_sale"] == "test note"
+    assert values["description"] == "test note"
+    assert values["sale_ok"] is True
+    assert "purchase_ok" not in values
+
+
+# ---------------------------------------------------------------------------
+# product_builder: write_template_values
+# ---------------------------------------------------------------------------
+
+def test_write_template_values_calls_odoo_execute():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): self.calls = []
+        def execute(self, model, method, args, kwargs=None):
+            self.calls.append((model, method, args))
+
+    odoo = FakeOdoo()
+    assert PB.write_template_values(odoo, 42, {"name": "test"})
+    assert ("product.template", "write", [[42], {"name": "test"}]) in odoo.calls
+
+
+def test_write_template_values_empty_returns_false():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): pass
+    assert PB.write_template_values(FakeOdoo(), 1, {}) is False
+
+
+# ---------------------------------------------------------------------------
+# product_builder: write_variant_sku
+# ---------------------------------------------------------------------------
+
+def test_write_variant_sku_updates_variant_code():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): self.calls = []
+        def fields_get(self, model): return {"default_code": {"readonly": False}}
+        def field_writable(self, model, name): return True
+        def execute(self, model, method, args, kwargs=None):
+            self.calls.append((model, method, args))
+            if method == "search_read":
+                return [{"id": 99, "default_code": "OLD"}]
+            return True
+
+    odoo = FakeOdoo()
+    assert PB.write_variant_sku(odoo, 42, "NEW-SKU")
+    assert any("write" in str(c) and "NEW-SKU" in str(c) for c in odoo.calls)
+
+
+def test_write_variant_sku_readonly_field_returns_false():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): pass
+        def fields_get(self, model): return {"default_code": {"readonly": True}}
+        def field_writable(self, model, name): return False
+
+    assert PB.write_variant_sku(FakeOdoo(), 1, "SKU") is False
+
+
+# ---------------------------------------------------------------------------
+# product_builder: after_create_update_optional_fields
+# ---------------------------------------------------------------------------
+
+def test_after_create_calls_write_with_optional_fields():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): self.write_calls = []
+        def fields_get(self, model):
+            return {
+                "default_code": {"readonly": False},
+                "list_price": {"readonly": False},
+                "description_sale": {"readonly": False},
+                "sale_ok": {"readonly": False},
+                "detailed_type": {"readonly": False, "selection": [["consu", "Goods"]]},
+            }
+        def field_writable(self, model, name):
+            return name in self.fields_get(model)
+        def execute(self, model, method, args, kwargs=None):
+            if method == "write":
+                self.write_calls.append(args)
+            if method == "search_read":
+                return [{"id": 99}]
+            return True
+
+    odoo = FakeOdoo()
+    PB.after_create_update_optional_fields(odoo, 42, {
+        "sku": "SKU-001", "price": "99.50", "category": "test",
+        "stock": "10", "selling_points": "fast", "keywords": "k",
+        "item_id": "i1",
+    })
+    assert len(odoo.write_calls) >= 1
+
+
+# ---------------------------------------------------------------------------
+# product_builder: create_template_with_fallback
+# ---------------------------------------------------------------------------
+
+def test_create_with_fallback_succeeds_on_first_attempt():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): self.creates = []
+        def fields_get(self, model): return {"name": {"readonly": False}, "default_code": {"readonly": False}, "detailed_type": {"readonly": False, "selection": [["consu", "Goods"]]}}
+        def field_writable(self, model, name): return True
+        def execute(self, model, method, args, kwargs=None):
+            if method == "create":
+                self.creates.append(args)
+                return 11
+            return True
+
+    odoo = FakeOdoo()
+    result = PB.create_template_with_fallback(odoo, {
+        "sku": "S", "listing_title": "t", "price": "10",
+        "category": "c", "stock": "5", "selling_points": "sp", "keywords": "k",
+        "item_id": "i",
+    })
+    assert result == 11
+    assert len(odoo.creates) == 1
+
+
+def test_create_with_fallback_tries_multiple_attempts():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): self.creates = 0
+        def fields_get(self, model): return {"name": {"readonly": False}, "default_code": {"readonly": False}, "detailed_type": {"readonly": False, "selection": [["consu", "Goods"]]}}
+        def field_writable(self, model, name): return True
+        def execute(self, model, method, args, kwargs=None):
+            if method == "create":
+                self.creates += 1
+                if self.creates < 3:
+                    raise RuntimeError("simulated failure")
+                return 22
+            return True
+
+    odoo = FakeOdoo()
+    result = PB.create_template_with_fallback(odoo, {
+        "sku": "S", "listing_title": "t", "price": "10",
+        "category": "c", "stock": "5", "selling_points": "sp", "keywords": "k",
+        "item_id": "i",
+    })
+    assert result == 22
+    assert odoo.creates == 3
+
+
+# ---------------------------------------------------------------------------
+# product_builder: create_product
+# ---------------------------------------------------------------------------
+
+def test_create_product_returns_existing_id_when_found():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): pass
+        def product_exists(self, sku): return 55
+
+    result = PB.create_product(FakeOdoo(), {"sku": "EXISTING", "listing_title": "t", "price": "10", "category": "c", "stock": "1", "selling_points": "s", "keywords": "k", "item_id": "i"})
+    assert result == "odoo-existing-55"
+
+
+def test_create_product_creates_new_when_not_found():
+    from shadowbot.odoo_adapter import OdooClient
+    class FakeOdoo(OdooClient):
+        def __init__(self): self.creates = []
+        def fields_get(self, model): return {"name": {"readonly": False}, "default_code": {"readonly": False}, "detailed_type": {"readonly": False, "selection": [["consu", "Goods"]]}}
+        def field_writable(self, model, name): return True
+        def product_exists(self, sku): return None
+        def execute(self, model, method, args, kwargs=None):
+            if method == "create":
+                self.creates.append(args)
+                return 33
+            return True
+
+    result = PB.create_product(FakeOdoo(), {"sku": "NEW", "listing_title": "t", "price": "10", "category": "c", "stock": "1", "selling_points": "s", "keywords": "k", "item_id": "i"})
+    assert result == "odoo-product-33"  # create_product returns odoo-product-{id} for new products
