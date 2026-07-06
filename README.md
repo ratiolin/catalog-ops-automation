@@ -101,6 +101,8 @@ uv run python tools/run_catalog_demo.py
 | [SonarQube Cloud](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation) | 持续代码质量 | 已接入 |
 | GitHub Actions CI | ruff + pytest + SonarQube | 已配置 |
 
+CI 约束：`portfolio/index.html` 是静态作品页契约测试输入，必须随仓库提交；不要让测试依赖只存在于本地 ignored 文件中。
+
 近期优化：拆分 `catalog_odoo_rpa.py`（683 行）为 `odoo_adapter.py` + `product_builder.py` + 编排器；提取 `MODEL_PRODUCT_*` 常量消除字符串重复；`build_product_values` 认知复杂度降低；FastAPI 端点补 `responses` 文档参数。
 
 
