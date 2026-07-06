@@ -42,7 +42,7 @@ def generate_copy(settings: Settings, item: CatalogItem) -> tuple[CopyDraft, str
         return CopyDraft.model_validate(raw), "dify"
     except CopywriterError:
         raise
-    except (httpx.HTTPError, json.JSONDecodeError, ValueError, TypeError) as exc:
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
         raise CopywriterError("catalog copy request failed") from exc
 
 

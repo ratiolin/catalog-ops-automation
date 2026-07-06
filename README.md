@@ -97,13 +97,13 @@ uv run python tools/run_catalog_demo.py
 | 工具 | 用途 | 状态 |
 |---|---|---|
 | [ruff](https://docs.astral.sh/ruff/) | Lint + 格式化 | 零警告 |
-| [pytest](https://docs.pytest.org/) | 单元 & 集成测试 | 45 通过 |
-| [SonarQube Cloud](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation) | 持续代码质量 | 已接入 |
+| [pytest](https://docs.pytest.org/) | 单元 & 集成测试 | 92 通过，总覆盖率 99% |
+| [SonarQube Cloud](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation) | 持续代码质量 | 质量门 OK，新代码覆盖率 99.6%，未解决问题 0 |
 | GitHub Actions CI | ruff + pytest + SonarQube | 已配置 |
 
 CI 约束：`portfolio/index.html` 是静态作品页契约测试输入，必须随仓库提交；不要让测试依赖只存在于本地 ignored 文件中。
 
-近期优化：拆分 `catalog_odoo_rpa.py`（683 行）为 `odoo_adapter.py` + `product_builder.py` + 编排器；提取 `MODEL_PRODUCT_*` 常量消除字符串重复；`build_product_values` 认知复杂度降低；FastAPI 端点补 `responses` 文档参数。
+近期优化：拆分 `catalog_odoo_rpa.py`（683 行）为 `odoo_adapter.py` + `product_builder.py` + 编排器；提取 `MODEL_PRODUCT_*` 常量消除字符串重复；`build_product_values` 认知复杂度降低；FastAPI 端点补 `responses` 文档参数；补齐 API、Worker、service、RPA、Odoo 适配器、产品构建器边界测试。
 
 
 ## 验证
