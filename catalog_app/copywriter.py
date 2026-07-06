@@ -7,7 +7,7 @@ from .models import CatalogItem
 from .schemas import CopyDraft
 
 
-class CopywriterError(RuntimeError):
+class CopywriterError(RuntimeError):  # noqa: S5713 (intentional marker - caught and re-raised before generic handlers)
     pass
 
 
