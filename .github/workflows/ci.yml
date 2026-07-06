@@ -32,6 +32,9 @@ jobs:
         run: uv run pytest
 
       - name: Docker Compose config check
+        env:
+          CATALOG_DB_PASSWORD: ci-catalog-password
+          RPA_TOKEN: ci-rpa-token
         run: docker compose config -q
 
       - name: SonarQube Scan
