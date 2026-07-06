@@ -97,7 +97,7 @@ uv run python tools/run_catalog_demo.py
 | 工具 | 用途 | 状态 |
 |---|---|---|
 | [ruff](https://docs.astral.sh/ruff/) | Lint + 格式化 | 零警告 |
-| [pytest](https://docs.pytest.org/) | 单元 & 集成测试 | 19 通过 |
+| [pytest](https://docs.pytest.org/) | 单元 & 集成测试 | 45 通过 |
 | [SonarQube Cloud](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation) | 持续代码质量 | 已接入 |
 | GitHub Actions CI | ruff + pytest + SonarQube | 已配置 |
 
