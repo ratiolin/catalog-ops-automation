@@ -1,5 +1,9 @@
 # 商品上架运营自动化
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=metratio_catalog-ops-automation&metric=alert_status)](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=metratio_catalog-ops-automation&metric=coverage)](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation)
+[![CI](https://github.com/ratiolin/catalog-ops-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/ratiolin/catalog-ops-automation/actions)
+
 - 作品说明：<https://metratio.com/index/catalog-ops>
 - Feedback 项目：<https://metratio.com/index/feedback>
 
