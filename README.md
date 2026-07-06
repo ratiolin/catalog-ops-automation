@@ -4,8 +4,6 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=metratio_catalog-ops-automation&metric=coverage)](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation)
 [![CI](https://github.com/ratiolin/catalog-ops-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/ratiolin/catalog-ops-automation/actions)
 
-- 作品说明：<https://metratio.com/index/catalog-ops>
-- Feedback 项目：<https://metratio.com/index/feedback>
 
 面向数字化运营/实施岗位的合成沙箱：商品 CSV 先经过确定性异常校验，Dify 为通过项生成候选文案，影刀编排 Odoo Community 的 XML-RPC 写入，Metabase 展示当前状态与操作审计。
 
