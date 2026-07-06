@@ -80,7 +80,7 @@ uv run python tools/run_catalog_demo.py
 
 ## 影刀写入 Odoo
 
-影刀模块位于 `shadowbot/catalog_odoo_rpa.py`，导入与回放见 `shadowbot/IMPORT-RUN-GUIDE.md`。当前实现：
+影刀模块位于 `shadowbot/catalog_odoo_rpa.py`（编排器），Odoo 适配层见 `shadowbot/odoo_adapter.py`，产品构建逻辑见 `shadowbot/product_builder.py`，导入与回放见 `shadowbot/IMPORT-RUN-GUIDE.md`。当前实现：
 
 - 使用 Odoo 官方 XML-RPC，避免动态页面定位的不稳定；
 - 动态读取字段元数据，兼容产品类型及可写字段差异；
@@ -90,6 +90,19 @@ uv run python tools/run_catalog_demo.py
 - HTTP 回调重新构造请求并最多重试三次。
 
 这是“影刀平台编排 + ERP 官方接口写入”的实操证据，不宣称为网页点击型 RPA。
+
+
+## 代码质量
+
+| 工具 | 用途 | 状态 |
+|---|---|---|
+| [ruff](https://docs.astral.sh/ruff/) | Lint + 格式化 | 零警告 |
+| [pytest](https://docs.pytest.org/) | 单元 & 集成测试 | 19 通过 |
+| [SonarQube Cloud](https://sonarcloud.io/dashboard?id=metratio_catalog-ops-automation) | 持续代码质量 | 已接入 |
+| GitHub Actions CI | ruff + pytest + SonarQube | 已配置 |
+
+近期优化：拆分 `catalog_odoo_rpa.py`（683 行）为 `odoo_adapter.py` + `product_builder.py` + 编排器；提取 `MODEL_PRODUCT_*` 常量消除字符串重复；`build_product_values` 认知复杂度降低；FastAPI 端点补 `responses` 文档参数。
+
 
 ## 验证
 

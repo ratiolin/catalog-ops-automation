@@ -33,7 +33,13 @@ def health(db: Annotated[Session, Depends(get_db)]) -> dict:
     return {"status": "ok", "service": "catalog-ops-api"}
 
 
-@app.post("/v1/catalog/imports", status_code=202)
+@app.post(
+    "/v1/catalog/imports",
+    status_code=202,
+    responses={
+        400: {"description": "Invalid idempotency key, CSV too large, or malformed CSV"},
+    },
+)
 async def create_import(
     db: Annotated[Session, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
@@ -56,7 +62,10 @@ async def create_import(
     return {"run_id": run.id, "status": run.status, "reused": reused}
 
 
-@app.get("/v1/catalog/runs/{run_id}")
+@app.get(
+    "/v1/catalog/runs/{run_id}",
+    responses={404: {"description": "Catalog run not found"}},
+)
 def get_run(run_id: str, db: Annotated[Session, Depends(get_db)]) -> dict:
     run = db.get(CatalogRun, run_id)
     if run is None:
@@ -64,7 +73,13 @@ def get_run(run_id: str, db: Annotated[Session, Depends(get_db)]) -> dict:
     return run_payload(db, run)
 
 
-@app.get("/v1/catalog/runs/{run_id}/approved.csv")
+@app.get(
+    "/v1/catalog/runs/{run_id}/approved.csv",
+    responses={
+        401: {"description": "Invalid or missing RPA token"},
+        404: {"description": "Catalog run not found"},
+    },
+)
 def get_approved_csv(
     run_id: str,
     db: Annotated[Session, Depends(get_db)],
@@ -81,7 +96,14 @@ def get_approved_csv(
     )
 
 
-@app.post("/v1/catalog/runs/{run_id}/erp-results")
+@app.post(
+    "/v1/catalog/runs/{run_id}/erp-results",
+    responses={
+        401: {"description": "Invalid or missing RPA token"},
+        404: {"description": "Catalog run not found"},
+        409: {"description": "Invalid item state or concurrent transition"},
+    },
+)
 def post_erp_results(
     run_id: str,
     batch: ERPResultBatch,
