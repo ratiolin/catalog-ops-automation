@@ -8,7 +8,7 @@ def test_catalog_portfolio_has_navigation_and_evidence_assets() -> None:
     html = (PORTFOLIO / "index.html").read_text(encoding="utf-8")
 
     assert 'href="/index"' in html
-    assert 'href="/index/feedback"' in html
+    assert 'href="/feedback"' in html
     assert 'href="/metratio.png"' in html
 
     for filename, magic in (
@@ -18,7 +18,7 @@ def test_catalog_portfolio_has_navigation_and_evidence_assets() -> None:
     ):
         path = PORTFOLIO / "assets" / filename
         assert path.read_bytes().startswith(magic)
-        assert f"/index/catalog-ops/assets/{filename}" in html
+        assert f"/catalog-ops/assets/{filename}" in html
 
 
 def test_catalog_portfolio_keeps_current_state_separate_from_attempt_history() -> None:
